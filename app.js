@@ -23,14 +23,22 @@ const quizRoutes = require("./routes/quizRoutes");
 
 //Configurações
 app.set("port", process.env.PORT || 3000);
+
 const allowedOrigins = [
   'http://localhost:5173',               // Frontend local
   'https://frontend-qipy.onrender.com'   // Frontend online
 ];
 
+// Tratar preflight requests (OPTIONS)
+app.options('*', cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
+
+// CORS normal para todos os pedidos
 app.use(cors({
   origin: allowedOrigins,
-  credentials: true, // necessário se usares cookies/sessões
+  credentials: true // necessário se usares cookies/sessões
 }));
 
 //Middlewares
