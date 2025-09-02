@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
@@ -9,7 +10,7 @@ const verifyToken = (req, res, next) => {
     if (!token) return res.status(401).json({ message: 'Não autenticado' });
 
     try {
-        req.user = jwt.verify(token, 'your_jwt_secret');
+        req.user = jwt.verify(token, process.env.JWT_SECRET);
         next();
     } catch (err) {
         res.status(403).json({ message: 'Token inválido' });
