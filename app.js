@@ -63,7 +63,7 @@ db.sequelize.sync({alter: true})
 
 
 //Rotas
-app.use("/", authRoutes);
+app.use("/auth", authRoutes);
 app.use("/formando", formandoRoutes);
 app.use("/gestor", gestorRoutes);
 

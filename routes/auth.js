@@ -20,15 +20,15 @@ const verifyToken = (req, res, next) => {
 // Rotas existentes
 router.post('/register', authController.register);
 router.post('/login', authController.login);
-router.get('/auth/check', verifyToken, (req, res) => {
+router.get('/check', verifyToken, (req, res) => {
     res.status(200).json({ message: 'Autenticado', user: req.user });
 });
 router.post('/logout', authController.logout);
 
 // Solicitar recuperação de senha
-router.post('/auth/request-password-reset', authController.requestPasswordReset);
+router.post('/request-password-reset', authController.requestPasswordReset);
 
 // Redefinir senha (via token)
-router.post('/auth/reset-password', authController.resetPassword);
+router.post('/reset-password', authController.resetPassword);
 
 module.exports = router;
