@@ -27,7 +27,6 @@ const db = require("./models/index");
 app.set("port", process.env.PORT || 3000);
 
 const allowedOrigins = [
-  'http://localhost:5173',               // Frontend local
   'https://frontend-qipy.onrender.com'   // Frontend online
 ];
 

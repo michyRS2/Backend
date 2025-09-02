@@ -79,11 +79,13 @@ exports.login = async (req, res) => {
         const token = jwt.sign({ id: userId, role }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         res.cookie('authToken', token, {
-    httpOnly: true,
-secure: process.env.NODE_ENV === 'production' ? true : false,
-    sameSite: 'None',
-    maxAge: 60 * 60 * 1000
+  httpOnly: true,
+  secure: true,     // obrigatório em HTTPS
+  sameSite: 'None', // permite cross-site
+  maxAge: 60 * 60 * 1000
 });
+
+
 
 
         return res.json({token, user, role });
