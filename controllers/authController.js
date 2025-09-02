@@ -82,6 +82,7 @@ exports.login = async (req, res) => {
   httpOnly: true,
   secure: true,     // obrigatório em HTTPS
   sameSite: 'None', // permite cross-site
+  domain: '.onrender.com',
   maxAge: 60 * 60 * 1000
 });
 
