@@ -35,26 +35,6 @@ const findUserByEmail = async (email) => {
 
 
 
-exports.register = async (req, res) => {
-    const { Nome, Email, Password} = req.body;
-
-    try {
-        const hashedPassword = await bcrypt.hash(Password, 10);
-
-        let newUser;
-        newUser = await db.Formando.create({
-                Nome,
-                Email,
-                Password: hashedPassword
-            });
-
-        res.status(201).json({ message: 'Utilizador registado com sucesso', user: newUser });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Erro ao registar utilizador' });
-    }
-};
 
 
 exports.login = async (req, res) => {
