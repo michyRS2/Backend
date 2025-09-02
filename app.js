@@ -1,7 +1,10 @@
 const express = require("express");
 const app = express();
-const cookieParser = require('cookie-parser')
-var cors=require('cors');
+const cookieParser = require('cookie-parser');
+const cors = require('cors');
+const path = require("path");
+
+// Rotas
 const authRoutes = require("./routes/auth");
 const PerfilRoutes = require("./routes/PerfilRoutes");
 const formandoRoutes = require('./routes/formandoRoutes');
@@ -10,18 +13,17 @@ const cursoRoutes = require('./routes/cursoRoutes');
 const inscricaoRoutes = require('./routes/inscricaoRoutes');
 const gestorRoutes = require('./routes/gestorRoutes');
 const categoriaRoutes = require("./routes/categoriaRoutes");
-const areaRoutes = require("./routes/areaRoutes");
-const topicoRoutes = require("./routes/topicoRoutes");
-const sequelize = require('./config/database');
-const path = require("path");
+const areaRoutes = require('./routes/areaRoutes');
+const topicoRoutes = require('./routes/topicoRoutes');
 const moduloRoutes = require('./routes/moduloRoutes');
 const forumRoutes = require('./routes/forumRoutes');
 const notificacoesRoutes = require('./routes/notificacoes');
 const quizRoutes = require("./routes/quizRoutes");
 
+// Modelos
+const db = require("./models/index");
 
-
-//Configurações
+// Configurações
 app.set("port", process.env.PORT || 3000);
 
 const allowedOrigins = [
@@ -29,44 +31,32 @@ const allowedOrigins = [
   'https://frontend-qipy.onrender.com'   // Frontend online
 ];
 
-// Tratar preflight requests (OPTIONS)
-app.options('*', cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
-
-// CORS normal para todos os pedidos
+// CORS com função para múltiplas origens
 app.use(cors({
-  origin: allowedOrigins,
-  credentials: true // necessário se usares cookies/sessões
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true); // Postman, curl, etc
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true // necessário para cookies
 }));
 
-//Middlewares
+// Middlewares
 app.use(cookieParser());
 app.use(express.json());
 
+// Sincronização das tabelas
+db.sequelize.sync({ alter: true })
+  .then(() => console.log("Tabelas sincronizadas com sucesso."))
+  .catch(err => console.error("Erro ao sincronizar as tabelas: ", err));
 
-
-//modelos
-const db = require("./models/index");
-
-//sincronização das tabelas
-db.sequelize.sync({alter: true})
-  .then(() =>{
-    console.log("Tabelas sincronizadas com sucesso.");
-  })
-  .catch((err) =>{
-    console.error("Erro ao sincronizar as tabelas: ",err);
-  });
-
-
-
-
-//Rotas
+// Rotas
 app.use("/auth", authRoutes);
 app.use("/formando", formandoRoutes);
 app.use("/gestor", gestorRoutes);
-
 app.use('/gestor/cursos', moduloRoutes);
 app.use("/formador", formadorRoutes);
 app.use("/cursos", cursoRoutes);
@@ -77,12 +67,12 @@ app.use("/areas", areaRoutes);
 app.use("/topicos", topicoRoutes);
 app.use("/perfil", PerfilRoutes);
 app.use("/forum", forumRoutes);
-app.use("/api", require("./routes/quizRoutes"));
-
-
+app.use("/api", quizRoutes);
 app.use('/notificacoes', notificacoesRoutes);
 
+// Static files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 app.get('/teste', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'uploads', '1756332933016-render_vite.pdf'));
 });
