@@ -77,6 +77,11 @@ app.get('/teste', (req, res) => {
   res.send('✅ O servidor está a funcionar corretamente!');
 });
 
+app.get("/publico", (req, res) => {
+  res.json({ mensagem: "Esta é uma rota pública, não precisa de token!" });
+});
+
+
 
 app.listen(app.get("port"), () => {
   console.log("Start server on port " + app.get("port"));
