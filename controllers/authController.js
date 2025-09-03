@@ -61,6 +61,11 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: "Senha incorreta" });
     }
 
+    // 4.1 Verificar se a conta está ativa
+if (user.Estado !== "ativo") {
+  return res.status(403).json({ message: "A sua conta ainda não foi aprovada pelo gestor." });
+}
+
     // 5. Create token
     let userId;
     if (role === "formando") {
@@ -206,8 +211,33 @@ exports.registerFormador = async (req, res) => {
       Nome,
       Email,
       Password: hashedPassword,
-      Estado: "ativo",
+      Estado: "pendente",
     });
+
+    // ⬇️ NOTIFICAR OS GESTORES ⬇️
+    try {
+      console.log("🔍 A procurar gestores...");
+      const gestores = await db.Gestor.findAll();
+      console.log(`📋 Encontrados ${gestores.length} gestores`);
+
+      for (const gestor of gestores) {
+        console.log(`📨 Criando notificação para gestor ${gestor.ID_Gestor}`);
+
+        const notificacao = await db.Notificacao.create({
+          ID_Utilizador: gestor.ID_Gestor,
+          Tipo_Utilizador: "gestor",
+          Titulo: "Novo Pedido de Registo",
+          Mensagem: `Novo pedido de registo de ${newFormador.Nome} (${newFormador.Email}) aguarda aprovação.`,
+          Tipo: "registro",
+          Link_Acão: "/gestor/gerir-utilizadores",
+          Prioridade: "alta",
+        });
+
+        console.log(`✅ Notificação criada: ${notificacao.ID_Notificacao}`);
+      }
+    } catch (notificacaoError) {
+      console.error("❌ Erro ao criar notificações:", notificacaoError);
+    }
 
     res.status(201).json({
       message: "Formador registado com sucesso",
