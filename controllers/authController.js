@@ -91,10 +91,10 @@ exports.login = async (req, res) => {
 
 exports.logout = (req, res) => {
   res.clearCookie("authToken", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "Strict",
-  });
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production", 
+  sameSite: "Strict",
+});
   res.status(200).json({ message: "Sessão terminada com sucesso" });
 };
 
