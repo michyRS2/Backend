@@ -76,11 +76,12 @@ exports.login = async (req, res) => {
     });
 
     res.cookie("authToken", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "None",
-      maxAge: 60 * 60 * 1000,
-    });
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production", // true só em produção
+  sameSite: "Strict",
+  maxAge: 60 * 60 * 1000,
+});
+
 
     return res.json({ token, user, role });
   } catch (err) {
@@ -92,10 +93,11 @@ exports.login = async (req, res) => {
 exports.logout = (req, res) => {
   res.clearCookie("authToken", {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production", 
+  secure: process.env.NODE_ENV === "production",
   sameSite: "Strict",
 });
-  res.status(200).json({ message: "Sessão terminada com sucesso" });
+res.status(200).json({ message: "Sessão terminada com sucesso" });
+
 };
 
 // Solicitar recuperação de senha
