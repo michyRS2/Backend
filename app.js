@@ -73,8 +73,9 @@ app.use('/notificacoes', notificacoesRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.get('/teste', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'uploads', '1756332933016-render_vite.pdf'));
+  res.send('✅ O servidor está a funcionar corretamente!');
 });
+
 
 app.listen(app.get("port"), () => {
   console.log("Start server on port " + app.get("port"));
