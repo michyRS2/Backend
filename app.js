@@ -134,7 +134,7 @@ app.use("/api", quizRoutes);
 app.use('/notificacoes', notificacoesRoutes);
 
 // Static files
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get('/teste', (req, res) => {
   res.send('✅ O servidor está a funcionar corretamente!');
