@@ -4,11 +4,11 @@ var sequelize = require("../config/database");
 
 const Gestor = sequelize.define("gestor", {
   ID_Gestor: {
-    type: Sequelize.INTEGER,
-    primaryKey: true,
-    autoIncrement: true, 
-  allowNull: false
-  },
+  type: Sequelize.INTEGER,
+  primaryKey: true,
+  autoIncrement: true
+},
+
   Nome: Sequelize.STRING(100),
   Email: {
     type: Sequelize.STRING(100),

@@ -45,28 +45,68 @@ app.use(cookieParser());
 app.use(express.json());
 
 // === FUNÇÃO PARA CRIAR GESTOR PADRÃO SE NÃO EXISTIR ===
+
 const createDefaultGestor = async () => {
   try {
     const existingGestor = await db.Gestor.findOne({ where: { Email: 'admin@softskills.com' } });
-    if (existingGestor) {
-      console.log('✅ Gestor já existe. Nada a criar.');
-      return;
-    }
+    if (existingGestor) return;
 
     const hashedPassword = await bcrypt.hash('Admin123!', 10);
-
-    const newGestor = await db.Gestor.create({
+    await db.Gestor.create({
       Nome: 'Administrador',
       Email: 'admin@softskills.com',
       Password: hashedPassword,
       Estado: 'ativo'
     });
 
-    console.log('✅ Gestor criado automaticamente:', newGestor.Email);
+    console.log('✅ Gestor criado automaticamente');
   } catch (err) {
     console.error('❌ Erro ao criar gestor:', err);
   }
 };
+
+
+app.get('/setup-gestor', async (req, res) => {
+  try {
+    // 1️⃣ Verificar se a coluna ID_Gestor já é identity
+    const [result] = await db.sequelize.query(`
+      SELECT is_identity 
+      FROM information_schema.columns 
+      WHERE table_name = 'Gestor' AND column_name = 'ID_Gestor';
+    `);
+
+    if (result.length && result[0].is_identity === 'NO') {
+      await db.sequelize.query(`
+        ALTER TABLE "Gestor"
+        ALTER COLUMN "ID_Gestor" ADD GENERATED ALWAYS AS IDENTITY;
+      `);
+      console.log('✅ Coluna ID_Gestor alterada para auto-increment (identity)');
+    } else {
+      console.log('✅ Coluna ID_Gestor já é identity');
+    }
+
+    // 2️⃣ Criar gestor padrão se não existir
+    const existingGestor = await db.Gestor.findOne({ where: { Email: 'admin@softskills.com' } });
+    if (!existingGestor) {
+      const hashedPassword = await bcrypt.hash('Admin123!', 10);
+      const newGestor = await db.Gestor.create({
+        Nome: 'Administrador',
+        Email: 'admin@softskills.com',
+        Password: hashedPassword,
+        Estado: 'ativo'
+      });
+      console.log('✅ Gestor criado automaticamente:', newGestor.Email);
+      return res.send('✅ Coluna corrigida e gestor criado');
+    }
+
+    res.send('✅ Coluna verificada. Gestor já existia.');
+  } catch (err) {
+    console.error('❌ Erro ao executar setup:', err);
+    res.status(500).send('Erro ao executar setup');
+  }
+});
+
+
 
 // Sincronização das tabelas e criação do gestor
 db.sequelize.sync({ alter: true })
