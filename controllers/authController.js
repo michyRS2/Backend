@@ -184,6 +184,43 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
+exports.registerFormador = async (req, res) => {
+  try {
+    const { Nome, Email, Password } = req.body;
+
+    if (!Nome || !Email || !Password) {
+      return res.status(400).json({ message: "Todos os campos são obrigatórios" });
+    }
+
+    // Verifica se já existe
+    const existingFormador = await db.Formador.findOne({ where: { Email } });
+    if (existingFormador) {
+      return res.status(400).json({ message: "E-mail já registado" });
+    }
+
+    // Hash da password
+    const hashedPassword = await bcrypt.hash(Password, 10);
+
+    // Cria o novo formador
+    const newFormador = await db.Formador.create({
+      Nome,
+      Email,
+      Password: hashedPassword,
+      Estado: "ativo",
+    });
+
+    res.status(201).json({
+      message: "Formador registado com sucesso",
+      user: { id: newFormador.ID_Formador, Nome: newFormador.Nome, Email: newFormador.Email }
+    });
+  } catch (err) {
+    console.error("Erro no registo de formador:", err);
+    res.status(500).json({ message: "Erro no servidor" });
+  }
+};
+
+
+
 exports.register = async (req, res) => {
   const { Nome, Email, Password } = req.body;
 

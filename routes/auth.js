@@ -18,7 +18,9 @@ const verifyToken = (req, res, next) => {
 
 
 // Rotas existentes
-router.post('/register', authController.register);
+router.post('/register', authController.register);//registo de formando
+router.post('/register-formador', authController.registerFormador);//registo de formador
+
 router.post('/login', authController.login);
 router.get('/check', verifyToken, (req, res) => {
     res.status(200).json({ message: 'Autenticado', user: req.user });
