@@ -3,6 +3,7 @@ const app = express();
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const path = require("path");
+const bcrypt = require('bcrypt');
 
 // Rotas
 const authRoutes = require("./routes/auth");
@@ -27,30 +28,52 @@ const db = require("./models/index");
 app.set("port", process.env.PORT || 3000);
 
 const allowedOrigins = [
-  'http://localhost:5173',               // Frontend local
-  'https://frontend-qipy.onrender.com'   // Frontend online
+  'http://localhost:5173',
+  'https://frontend-qipy.onrender.com'
 ];
 
-// CORS com função para múltiplas origens
+// Middlewares
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin) return callback(null, true); // Postman, curl, etc
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) callback(null, true);
+    else callback(new Error('Not allowed by CORS'));
   },
-  credentials: true // necessário para cookies
+  credentials: true
 }));
-
-// Middlewares
 app.use(cookieParser());
 app.use(express.json());
 
-// Sincronização das tabelas
+// === FUNÇÃO PARA CRIAR GESTOR PADRÃO SE NÃO EXISTIR ===
+const createDefaultGestor = async () => {
+  try {
+    const existingGestor = await db.Gestor.findOne({ where: { Email: 'admin@softskills.com' } });
+    if (existingGestor) {
+      console.log('✅ Gestor já existe. Nada a criar.');
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash('Admin123!', 10);
+
+    const newGestor = await db.Gestor.create({
+      Nome: 'Administrador',
+      Email: 'admin@softskills.com',
+      Password: hashedPassword,
+      Estado: 'ativo'
+    });
+
+    console.log('✅ Gestor criado automaticamente:', newGestor.Email);
+  } catch (err) {
+    console.error('❌ Erro ao criar gestor:', err);
+  }
+};
+
+// Sincronização das tabelas e criação do gestor
 db.sequelize.sync({ alter: true })
-  .then(() => console.log("Tabelas sincronizadas com sucesso."))
+  .then(async () => {
+    console.log("Tabelas sincronizadas com sucesso.");
+    await createDefaultGestor(); // cria gestor antes de iniciar o servidor
+  })
   .catch(err => console.error("Erro ao sincronizar as tabelas: ", err));
 
 // Rotas
@@ -81,8 +104,7 @@ app.get("/publico", (req, res) => {
   res.json({ mensagem: "Esta é uma rota pública, não precisa de token!" });
 });
 
-
-
+// Start do servidor
 app.listen(app.get("port"), () => {
   console.log("Start server on port " + app.get("port"));
 });
