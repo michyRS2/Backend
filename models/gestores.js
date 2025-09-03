@@ -6,6 +6,8 @@ const Gestor = sequelize.define("gestor", {
   ID_Gestor: {
     type: Sequelize.INTEGER,
     primaryKey: true,
+    autoIncrement: true, 
+  allowNull: false
   },
   Nome: Sequelize.STRING(100),
   Email: {
