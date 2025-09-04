@@ -280,7 +280,6 @@ const searchCursos = async (req, res) => {
 // Regras:
 // - Primeira avaliação: grava em Inscricao.Avaliacao, incrementa Numero_Avaliacoes, recalcula média
 // - Atualização da avaliação: ajusta média substituindo a nota anterior, sem mexer no contador
-const { Op } = require("sequelize");
 
 const avaliarCurso = async (req, res) => {
   const idCurso = Number(req.params.id);
