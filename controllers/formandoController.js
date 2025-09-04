@@ -6,6 +6,8 @@ const {
   Categoria,
   Forum,
   Formador,
+  Formando, 
+  Gestor,
   Sequelize,
 } = require("../models");
 
