@@ -280,6 +280,8 @@ const searchCursos = async (req, res) => {
 // Regras:
 // - Primeira avaliação: grava em Inscricao.Avaliacao, incrementa Numero_Avaliacoes, recalcula média
 // - Atualização da avaliação: ajusta média substituindo a nota anterior, sem mexer no contador
+const { Op } = require("sequelize");
+
 const avaliarCurso = async (req, res) => {
   const idCurso = Number(req.params.id);
   const valor = Number(req.body.nota);
@@ -301,80 +303,40 @@ const avaliarCurso = async (req, res) => {
     const t = await sequelize.transaction();
 
     try {
-      if (insc.Avaliacao === null || insc.Avaliacao === undefined) {
-        // PRIMEIRA avaliação
+      // atualizar ou remover avaliação
+      if (valor === 0) {
+        await Inscricao.update(
+          { Avaliacao: null },
+          { where: { ID_Inscricao: insc.ID_Inscricao }, transaction: t }
+        );
+      } else {
         await Inscricao.update(
           { Avaliacao: valor },
           { where: { ID_Inscricao: insc.ID_Inscricao }, transaction: t }
-        );
-
-        await Curso.update(
-          {
-            Rating: sequelize.literal(
-              `ROUND(
-                 (
-                   COALESCE("Rating", 0)::numeric * COALESCE("Numero_Avaliacoes", 0)::numeric
-                   + ${valor}
-                 )
-                 / (COALESCE("Numero_Avaliacoes", 0) + 1)::numeric
-              , 2)`
-            ),
-            Numero_Avaliacoes: sequelize.literal(`COALESCE("Numero_Avaliacoes", 0) + 1`)
-          },
-          { where: { ID_Curso: idCurso }, transaction: t }
-        );
-      } if (valor === 0) {
-  // CANCELAR avaliação
-  const antigo = Number(insc.Avaliacao);
-
-  await Inscricao.update(
-    { Avaliacao: null },
-    { where: { ID_Inscricao: insc.ID_Inscricao }, transaction: t }
-  );
-
-  await Curso.update(
-    {
-      Rating: sequelize.literal(
-        `CASE 
-           WHEN COALESCE("Numero_Avaliacoes", 0) <= 1 
-             THEN 0 
-           ELSE ROUND(
-             (
-               COALESCE("Rating", 0)::numeric * COALESCE("Numero_Avaliacoes", 0)::numeric
-               - ${antigo}
-             ) / (COALESCE("Numero_Avaliacoes", 0) - 1)::numeric
-           , 2) END`
-      ),
-      Numero_Avaliacoes: sequelize.literal(
-        `GREATEST(COALESCE("Numero_Avaliacoes", 0) - 1, 0)`
-      )
-    },
-    { where: { ID_Curso: idCurso }, transaction: t }
-  );
-} else {
-        // JÁ tinha avaliação: substitui a nota (contador não muda)
-        const antigo = Number(insc.Avaliacao);
-
-        await Inscricao.update(
-          { Avaliacao: valor },
-          { where: { ID_Inscricao: insc.ID_Inscricao }, transaction: t }
-        );
-
-        await Curso.update(
-          {
-            // média_nova = (media_atual * n - antigo + novo) / n
-            Rating: sequelize.literal(
-              `ROUND(
-                 (
-                   COALESCE("Rating", 0)::numeric * COALESCE("Numero_Avaliacoes", 0)::numeric
-                   - ${antigo} + ${valor}
-                 ) / NULLIF(COALESCE("Numero_Avaliacoes", 0), 0)::numeric
-              , 2)`
-            )
-          },
-          { where: { ID_Curso: idCurso }, transaction: t }
         );
       }
+
+      // recalcular média e nº avaliações a partir da tabela Inscricao
+      const stats = await Inscricao.findOne({
+        where: { ID_Curso: idCurso, Avaliacao: { [Op.ne]: null } },
+        attributes: [
+          [sequelize.fn("COUNT", sequelize.col("Avaliacao")), "num"],
+          [sequelize.fn("AVG", sequelize.col("Avaliacao")), "media"]
+        ],
+        raw: true,
+        transaction: t
+      });
+
+      const novaMedia = Number(stats.media ?? 0);
+      const novoNum = Number(stats.num ?? 0);
+
+      await Curso.update(
+        {
+          Rating: novaMedia,
+          Numero_Avaliacoes: novoNum
+        },
+        { where: { ID_Curso: idCurso }, transaction: t }
+      );
 
       await t.commit();
 
@@ -388,7 +350,7 @@ const avaliarCurso = async (req, res) => {
         Nome_Curso: atualizado.Nome_Curso,
         Rating: Number(atualizado.Rating ?? 0),
         Numero_Avaliacoes: Number(atualizado.Numero_Avaliacoes ?? 0),
-        Minha_Avaliacao: valor
+        Minha_Avaliacao: valor === 0 ? null : valor
       });
     } catch (errTx) {
       await t.rollback();
@@ -399,6 +361,7 @@ const avaliarCurso = async (req, res) => {
     return res.status(500).json({ error: "Erro ao atualizar avaliação." });
   }
 };
+
 
 module.exports = {
   getCursoDetalhado,
