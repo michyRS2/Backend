@@ -129,14 +129,35 @@ const getDashboard = async (req, res) => {
     });
 
     const topicosForum = await Forum.findAll({
-      limit: 5,
-    });
+  limit: 5,
+  order: [['Data_Criacao', 'DESC']],
+});
 
-    const forum = topicosForum.map((topico) => ({
-      ID_Forum: topico.ID_Forum,
-      Titulo: topico.Titulo,
-      Descricao: topico.Descricao,
-    }));
+const forum = await Promise.all(topicosForum.map(async (topico) => {
+  let autorNome = 'Utilizador';
+
+  if (topico.Autor_Tipo === 'formando') {
+    const f = await Formando.findByPk(topico.Autor_ID);
+    autorNome = f ? f.Nome : autorNome;
+  } else if (topico.Autor_Tipo === 'formador') {
+    const f = await Formador.findByPk(topico.Autor_ID);
+    autorNome = f ? f.Nome : autorNome;
+  } else if (topico.Autor_Tipo === 'gestor') {
+    const g = await Gestor.findByPk(topico.Autor_ID);
+    autorNome = g ? g.Nome : autorNome;
+  }
+
+  return {
+    ID_Forum: topico.ID_Forum,
+    Titulo: topico.Titulo,
+    Descricao: topico.Descricao,
+    Autor: autorNome,
+    Autor_ID: topico.Autor_ID,
+    Autor_Tipo: topico.Autor_Tipo,
+    Data_Criacao: topico.Data_Criacao,
+  };
+}));
+
 
     res.json({
       cursosInscritos,
